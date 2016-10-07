@@ -1,5 +1,6 @@
 package musictag;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,9 +15,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.google.gson.Gson;
 
+import javazoom.jl.player.Player;
 import musictag.utils.FileUtils;
 
 public class MusicTagAlpha implements MusicTagApi {
@@ -29,6 +32,11 @@ public class MusicTagAlpha implements MusicTagApi {
 	private List<File> songFiles;
 	private List<TaggedSong> taggedSongs;
 	private List<TagDictionary> tagDictionaries;
+	
+	private TaggedSong selectedSong;
+	
+	private Thread musicPlayThread;
+	private Player musicPlayer;
 	
 	private long timer = 0;
 	
@@ -114,7 +122,7 @@ public class MusicTagAlpha implements MusicTagApi {
 		}
 		
 		for (String key : folderMap.keySet()) {
-			
+			System.out.println(key + " " + folderMap.get(key) + " songs");
 		}
 		
 		System.out.println("Printing Folder Data Complete - " + stopTimer() + "ms");
@@ -130,12 +138,30 @@ public class MusicTagAlpha implements MusicTagApi {
 	public void updateDictionary(TagDictionary dictionary) {
 		final String filename = fileLocation + DICT_DIR + "/" + dictionary.title;
 		FileUtils.writeObjectToFile(filename, dictionary);
-		
+	}
+	
+	@Override
+	public void addDictionary(TagDictionary dictionary) {
+		final String filename = fileLocation + DICT_DIR + "/" + dictionary.title;
+		FileUtils.writeObjectToFile(filename, dictionary);
+		tagDictionaries.add(dictionary);
+	}
+	
+	@Override
+	public TagDictionary getTagDictionaryByTitle(String title) {
+		for(TagDictionary dictionary : tagDictionaries) {
+			if (dictionary.getTitle().equals(title)) {
+				return dictionary;
+			}
+		}
+		return null;
 	}
 
 	@Override
 	public void removeDictionary(TagDictionary dictionary) {
-		// TODO Auto-generated method stub
+		final String filePath = fileLocation + DICT_DIR + "/" + dictionary.title;
+		FileUtils.deleteFile(filePath);
+		tagDictionaries.remove(dictionary);
 	}
 
 	@Override
@@ -208,6 +234,32 @@ public class MusicTagAlpha implements MusicTagApi {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public void playSong(final TaggedSong song) {
+		if (null != musicPlayThread && null != musicPlayer) {
+			musicPlayer.close();
+			musicPlayThread.interrupt();
+		}
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				try{
+				    FileInputStream fis = new FileInputStream(song.fileLocation);
+				    BufferedInputStream bis = new BufferedInputStream(fis);
+				    musicPlayer = new Player(bis);
+				    musicPlayer.play();
+				}
+				catch(Exception ex) {
+					System.err.println(ex);
+				}
+			}
+		};
+		
+		
+		musicPlayThread = new Thread(runnable);
+		musicPlayThread.start();
+	};
 
 	private void startTimer() {
 		timer = System.currentTimeMillis();
@@ -215,6 +267,23 @@ public class MusicTagAlpha implements MusicTagApi {
 	
 	private long stopTimer() {
 		return System.currentTimeMillis() - timer;
+	}
+	
+	public void selectRandomSong() {
+		int randomNumber = ThreadLocalRandom.current().nextInt(0, taggedSongs.size());
+		selectedSong = taggedSongs.get(randomNumber);
+		playSong(selectedSong);
+		System.out.println(selectedSong.toString());
+	}
+	
+	public void addTagsToSelectedSong(String... tags) {
+		selectedSong.addTags(tags);
+		updateSong(selectedSong);
+	}
+	
+	public void removeTagsFromSelectedSong(String... tags) {
+		selectedSong.removeTags(tags);
+		updateSong(selectedSong);
 	}
 
 }

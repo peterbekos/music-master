@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -104,12 +105,12 @@ public enum FileUtils {
 		}
     }
     
-    public static void writeObjectToFile(String filename, Object object) {
+    public static void writeObjectToFile(String filePath, Object object) {
 		Gson gson = new Gson();
 		String s = gson.toJson(object);
 		
 		try {
-			Files.write(Paths.get(filename), s.getBytes());
+			Files.write(Paths.get(filePath), s.getBytes());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -128,11 +129,25 @@ public enum FileUtils {
 	
 			String json = sb.toString();
 			Gson gson = new Gson();
-			T tagDictionary = (T) gson.fromJson(json, objectType);
-			return tagDictionary;
+			T object = (T) gson.fromJson(json, objectType);
+			
+			fis.close();
+			isr.close();
+			bufferedReader.close();
+			
+			return object;
 		} catch (Exception e) {
 			return null;
 		}
 	}
+    
+    public static void deleteFile(String filePath) {
+    	try {
+    		File file = new File(filePath);
+    		file.delete();
+    	} catch (Exception e) {
+    		
+    	}
+    }
     
 }

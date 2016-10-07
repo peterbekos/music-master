@@ -3,14 +3,18 @@ import java.util.List;
 
 public interface MusicTagApi {
 	
+	
 	void load(String fileLocation);
 	void updateSong(TaggedSong song);
 	void updateDictionary(TagDictionary dictionary);
+	void addDictionary(TagDictionary dictionary);
 	void removeDictionary(TagDictionary dictionary);
 
     List<TaggedSong> getTaggedSongs();
     List<TagDictionary> getTagDictionaries();
     List<String> getAllTags();
+    
+    TagDictionary getTagDictionaryByTitle(String title);
 
     List<TaggedSong> getSongsByTag(String tag);
     List<TaggedSong> getSongsByTagsUnion(String... tags);
@@ -23,4 +27,5 @@ public interface MusicTagApi {
     List<TaggedSong> filterSongsByTagsIntersection(List<TaggedSong> taggedSongs, String... tags);
     List<TaggedSong> filterSongsByRange(List<TaggedSong> taggedSongs, String tagType, int startIndex, int endIndex);    
 
+    void playSong(TaggedSong song);
 }
